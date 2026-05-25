@@ -4,73 +4,72 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 from PIL import Image
 import os
-import zipfile
-import urllib.request
 import keras
 
-# 1. Patch Keras
+# 1. Patch Keras لتجنب أخطاء Serialization
 original_dense_init = keras.layers.Dense.__init__
 def patched_dense_init(self, *args, **kwargs):
     kwargs.pop('quantization_config', None)
     original_dense_init(self, *args, **kwargs)
 keras.layers.Dense.__init__ = patched_dense_init
 
-# 2. دالة التحميل الذكي (المفقودة في كودك)
-@st.cache_resource
-def download_models():
-    zip_path = "models.zip"
-    extract_path = "models_data"
-    if not os.path.exists(extract_path):
-        url = "https://huggingface.co/ahmedhosny2052005/TRI-SCIENCE-AI/resolve/main/%D8%A7%D8%AD%D9%85%D8%AF%20%D8%AD%D8%B3%D9%86%D9%8A.zip"
-        urllib.request.urlretrieve(url, zip_path)
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(".") # سيفك الضغط في مجلد اسمه models_data
-    return extract_path
-
-# 3. إعداد الصفحة والتحميل
 st.set_page_config(page_title="P.L.A.N.T. M.E.D. AI", layout="centered")
-download_models()
 
+# 2. تحميل الموديلات مع فحص المسارات
 @st.cache_resource
-def load_all_models():
-    model_plant = tf.keras.models.load_model("models_data/Mint vs Basil.keras", compile=False)
-    model_disease = tf.keras.models.load_model("models_data/موديل الامراض.keras", compile=False)
-    model_health = tf.keras.models.load_model("models_data/موديل السليم.keras", compile=False)
-    return model_plant, model_disease, model_health
+def load_models():
+    base_path = "models_data"
+    # مسارات الملفات
+    p_plant = os.path.join(base_path, "Mint vs Basil.keras")
+    p_disease = os.path.join(base_path, "موديل الامراض.keras")
+    p_health = os.path.join(base_path, "موديل السليم.keras")
+    
+    # فحص الوجود
+    for p in [p_plant, p_disease, p_health]:
+        if not os.path.exists(p):
+            raise FileNotFoundError(f"الملف غير موجود: {p}. تأكد من رفع المجلد إلى GitHub.")
+            
+    # التحميل
+    return (tf.keras.models.load_model(p_plant, compile=False), 
+            tf.keras.models.load_model(p_disease, compile=False), 
+            tf.keras.models.load_model(p_health, compile=False))
 
-model_plant, model_disease, model_health = load_all_models()
+# تحميل الموديلات
+try:
+    model_plant, model_disease, model_health = load_models()
+except Exception as e:
+    st.error(f"خطأ في تحميل الموديلات: {e}")
+    st.stop()
 
-# 4. دالة المعالجة
-def process_and_predict(image_data):
-    img = Image.open(image_data)
+# 3. دالة التشخيص
+def process_and_predict(img_file):
+    img = Image.open(img_file)
     st.image(img, use_container_width=True)
     
-    img_224 = img.resize((224, 224))
-    x_224 = np.expand_dims(image.img_to_array(img_224), axis=0) / 255.0
-    
-    img_160 = img.resize((160, 160))
-    x_160 = np.expand_dims(image.img_to_array(img_160), axis=0) / 255.0
+    # تحضير الصور
+    x_224 = np.expand_dims(image.img_to_array(img.resize((224, 224))), axis=0) / 255.0
+    x_160 = np.expand_dims(image.img_to_array(img.resize((160, 160))), axis=0) / 255.0
 
     # التنبؤ
-    plant_preds = model_plant.predict(x_224)
-    detected_plant = "ريحان" if np.argmax(plant_preds) == 0 else "نعناع"
+    plant_idx = np.argmax(model_plant.predict(x_224, verbose=0))
+    raw_health = model_health.predict(x_160, verbose=0)[0][0]
     
-    health_preds = model_health.predict(x_160)
-    raw_val = health_preds[0][0]
+    # عرض النتائج
+    st.write(f"### نوع النبات: {'ريحان' if plant_idx == 0 else 'نعناع'}")
     
-    # تصحيح العتبة (جرب 0.2 أو 0.3 إذا لم يكتشف المرض)
-    is_healthy = raw_val < 0.3 
+    # كواليس التصحيح
+    with st.sidebar:
+        st.write(f"الرقم الخام للصحة: {raw_health:.4f}")
     
-    st.write(f"### نوع النبات: {detected_plant}")
-    if is_healthy:
-        st.success("العينة سليمة")
+    # قرار التشخيص (بناءً على 0.3 كعتبة حساسة)
+    if raw_health < 0.3:
+        st.success("✅ العينة سليمة")
     else:
-        dis_preds = model_disease.predict(x_160)
-        dis_idx = np.argmax(dis_preds)
-        st.error(f"العينة مصابة بمرض رقم: {dis_idx}")
+        dis_idx = np.argmax(model_disease.predict(x_160, verbose=0))
+        st.error(f"⚠️ العينة مصابة بمرض رقم: {dis_idx}")
 
-# 5. الواجهة
-tab1, tab2 = st.tabs(["كاميرا", "ملفات"])
+# 4. الواجهة
+tab1, tab2 = st.tabs(["📸 مسح ضوئي", "📁 رفع ملف"])
 with tab1:
     photo = st.camera_input("التقط صورة")
     if photo: process_and_predict(photo)
