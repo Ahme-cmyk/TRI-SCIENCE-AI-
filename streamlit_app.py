@@ -97,10 +97,9 @@ def process_and_predict(image_data):
             # الفحص الثاني (تصحيح Sigmoid)
             health_preds = model_health.predict(x_160, verbose=0)
             raw_health_value = health_preds[0][0]
-            
-            if raw_health_value < 0.5:
-                is_healthy = True
-                health_conf = (1 - raw_health_value) * 100
+           if raw_health_value < 0.2: 
+    is_healthy = True
+    * 100
             else:
                 is_healthy = False
                 health_conf = raw_health_value * 100
