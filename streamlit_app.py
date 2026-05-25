@@ -81,8 +81,7 @@ def predict(img_file):
     
     # هنا نضع "عتبة الاختبار"
     # غير الرقم 0.5 هذا وجربه 0.1 أو 0.8
-    THRESHOLD = 0.5 
-    
+THRESHOLD = 0.2    
     if health_val < THRESHOLD:
         st.success(f"النتيجة حسب الموديل: سليم (لأن القيمة {health_val:.4f} < {THRESHOLD})")
     else:
