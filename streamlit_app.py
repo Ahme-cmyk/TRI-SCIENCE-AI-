@@ -5,11 +5,12 @@ from tensorflow.keras.preprocessing import image
 from PIL import Image
 import os
 import zipfile
+import urllib.request
 
 # 1. إعداد الصفحة بأعلى جودة احترافية تناسب مشروعك الأكاديمي
 st.set_page_config(page_title="P.L.A.N.T. M.E.D. AI", page_icon="🌿", layout="centered")
 
-# 2. هندسة التصميم الاحترافي والـ CSS لتبهر الدكاترة
+# 2. هندسة التصميم الاحترافي والـ CSS (UI/UX Premium Design) لتبهر الدكاترة
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;800&display=swap');
@@ -107,19 +108,27 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- 1. دالة فك ضغط مستودع الموديلات بذكاء وديناميكية ---
+# --- 1. دالة سريعة لتحميل وفك ضغط ملف الموديلات من المستودع السحابي الحقيقي الخاص بك ---
 @st.cache_resource
-def extract_and_get_model_path(model_filename):
-    zip_filename = "احمد حسني.zip"  # تم تعديل اسم الـ zip ليطابق ملفك المرفوع بالمسافة
+def download_and_extract_models(model_filename):
+    zip_filename = "ahmed_hosny_models.zip"
     extract_to = "models_data"
     
+    # الرابط المباشر للملف الأصلي المكتمل المرفوع في حساب الـ Hugging Face الخاص بك
+    hf_download_url = "https://huggingface.co/ahmedhosny2052005/TRI-SCIENCE-AI/resolve/main/%D8%A7%D8%AD%D9%85%D8%AF%20%D8%AD%D8%B3%D9%86%D9%8A.zip"
+    
+    # تحميل الملف إذا لم يكن موجوداً على سيرفر ستريم ليت
+    if not os.path.exists(zip_filename) and not os.path.exists(extract_to):
+        with st.spinner('📥 جاري تحميل عقول المحاكاة من الخادم السحابي الآمن (322MB)... قد يستغرق ذلك دقيقة.'):
+            urllib.request.urlretrieve(hf_download_url, zip_filename)
+            
+    # فك الضغط
     if not os.path.exists(extract_to):
-        if os.path.exists(zip_filename):
+        with st.spinner('🔓 جاري فك ضغط وحقن الموديلات الذكية في الذاكرة الحالية...'):
             with zipfile.ZipFile(zip_filename, 'r') as zip_ref:
                 zip_ref.extractall(extract_to)
-        else:
-            raise FileNotFoundError(f"ملف المستودع المضغوط '{zip_filename}' غير موجود في الخادم الحالي.")
-            
+                
+    # البحث الديناميكي عن اسم الموديل المطلوب
     for root, dirs, files in os.walk(extract_to):
         if model_filename in files:
             return os.path.join(root, model_filename)
@@ -129,10 +138,9 @@ def extract_and_get_model_path(model_filename):
 # --- 2. دالة استدعاء الموديلات الثلاثة وتخزينها كـ Cache ---
 @st.cache_resource
 def load_all_models():
-    # تعديل المسميات لتتطابق تماماً مع محتويات ملف الـ Zip من الداخل
-    path_plant = extract_and_get_model_path("Mint vs Basil.keras")
-    path_disease = extract_and_get_model_path("موديل الامراض.keras")
-    path_health = extract_and_get_model_path("موديل السليم.keras")
+    path_plant = download_and_extract_models("Mint vs Basil.keras")
+    path_disease = download_and_extract_models("موديل الامراض.keras")
+    path_health = download_and_extract_models("موديل السليم.keras")
     
     return tf.keras.models.load_model(path_plant, compile=False), \
            tf.keras.models.load_model(path_disease, compile=False), \
@@ -140,9 +148,8 @@ def load_all_models():
 
 # تشغيل عملية استدعاء النماذج وتأكيد النجاح
 try:
-    with st.spinner('⏳ جاري البحث عن الموديلات وفك ضغط المستودع...'):
-        model_plant, model_disease, model_health = load_all_models()
-    st.success("تم العثور على عقول المحاكاة الـ 3 وتشغيل التطبيق بنجاح! 🎉")
+    model_plant, model_disease, model_health = load_all_models()
+    st.success("تم تفعيل عقول المحاكاة الـ 3 بنجاح استراتيجي واكتمل ربط المنصة! 🎉")
 except Exception as e:
     st.error(f"❌ خطأ تقني في استدعاء عقول المحاكاة: {e}")
 
