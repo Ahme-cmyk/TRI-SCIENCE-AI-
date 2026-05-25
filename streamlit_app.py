@@ -15,54 +15,55 @@ def patched_dense_init(self, *args, **kwargs):
     original_dense_init(self, *args, **kwargs)
 keras.layers.Dense.__init__ = patched_dense_init
 
-st.set_page_config(page_title="P.L.A.N.T. M.E.D. AI", layout="centered")
+# إعداد الصفحة
+st.set_page_config(page_title="P.L.A.N.T. M.E.D. AI", page_icon="🌿", layout="centered")
+
+# التصميم (الرسالة الترحيبية)
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap');
+    html, body, [class*="css"] { font-family: 'Cairo', sans-serif; text-align: right; direction: rtl; }
+    .welcome-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center; margin-bottom: 25px; }
+    </style>
+    <div class="welcome-card">
+        <div style="font-size: 32px; font-weight: 800;">🌿 منصة P.L.A.N.T. M.E.D. AI</div>
+        <div style="font-size: 16px;">نظام التشخيص البيئي المعتمد على عقول الذكاء الاصطناعي التتابعية.</div>
+    </div>
+""", unsafe_allow_html=True)
 
 @st.cache_resource
-def load_all_models_recursive():
+def load_models():
     file_id = '1dECn0z9QOpfcur4LH8XBTqQYQhCzV-i6'
     output_zip = 'ahmed_hosny.zip'
-    
-    # تحميل الملف إذا لم يكن موجوداً
     if not os.path.exists(output_zip):
         gdown.download(id=file_id, output=output_zip, quiet=False)
     
-    # فك الضغط في مجلد مؤقت
-    extract_to = "final_extraction"
+    extract_to = "models_folder"
     if not os.path.exists(extract_to):
         with zipfile.ZipFile(output_zip, 'r') as zip_ref:
             zip_ref.extractall(extract_to)
             
-    # البحث المتعمق (Recursive Search) عن الملفات أينما كانت
     found_paths = {}
     for root, dirs, files in os.walk(extract_to):
         for file in files:
             if file.endswith(".keras"):
                 found_paths[file] = os.path.join(root, file)
                 
-    # التحقق من الملفات الأربعة
-    required = ["Mint vs Basil.keras", "موديل السليم.keras", "موديل الامراض.keras", "disease_model_optimized.keras"]
-    models = {}
-    
-    for req in required:
-        if req in found_paths:
-            models[req] = tf.keras.models.load_model(found_paths[req], compile=False)
-        else:
-            # رسالة خطأ تفصيلية تخبرك بالضبط أين بحثنا
-            st.error(f"❌ لم يتم العثور على الموديل: {req}. الملفات التي وجدتها هي: {list(found_paths.keys())}")
-            st.stop()
-            
-    return models["Mint vs Basil.keras"], models["موديل السليم.keras"], models["موديل الامراض.keras"], models["disease_model_optimized.keras"]
+    # تحميل الموديلات
+    m1 = tf.keras.models.load_model(found_paths["Mint vs Basil.keras"], compile=False)
+    m2 = tf.keras.models.load_model(found_paths["موديل السليم.keras"], compile=False)
+    m3 = tf.keras.models.load_model(found_paths["موديل الامراض.keras"], compile=False)
+    m4 = tf.keras.models.load_model(found_paths["disease_model_optimized.keras"], compile=False)
+    return m1, m2, m3, m4
 
 # تحميل الموديلات
 try:
-    with st.spinner("جاري استكشاف المجلدات وفك العقول..."):
-        m_plant, m_health, m_disease, m_opt = load_all_models_recursive()
-    st.success("✅ تم العثور على العقول الأربعة وتفعيلها!")
+    m_plant, m_health, m_disease, m_opt = load_models()
+    st.success("✅ تم تفعيل العقول بنجاح!")
 except Exception as e:
-    st.error(f"❌ خطأ أثناء التحميل: {e}")
+    st.error(f"❌ خطأ تحميل: {e}")
     st.stop()
 
-# (بقية كود التنبؤ والواجهة كما هي)
 def predict(img_file):
     img = Image.open(img_file)
     st.image(img, use_container_width=True)
@@ -73,6 +74,8 @@ def predict(img_file):
     health_val = m_health.predict(x160, verbose=0)[0][0]
     
     st.write(f"### النوع: {'ريحان' if p_type == 0 else 'نعناع'}")
+    
+    # هنا تم تصحيح الـ Indentation (المسافات)
     if health_val < 0.3:
         st.success("✅ العينة سليمة")
     else:
