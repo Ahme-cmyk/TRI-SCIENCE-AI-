@@ -70,25 +70,26 @@ def predict(img_file):
     
     # تحضير الصور
     x160 = np.expand_dims(image.img_to_array(img.resize((160, 160))), axis=0) / 255.0
+    x224 = np.expand_dims(image.img_to_array(img.resize((224, 224))), axis=0) / 255.0
     
     # الحصول على تنبؤات الموديلات
+    p_type = np.argmax(m_plant.predict(x224, verbose=0))
     health_val = m_health.predict(x160, verbose=0)[0][0]
     
-    # عرض الأرقام الخام بوضوح تام
     st.write("---")
     st.write(f"### 🧪 تحليل العقل (قيم خام):")
     st.write(f"قيمة الصحة (0=سليم, 1=مصاب): **{health_val:.4f}**")
     
-    # هنا نضع "عتبة الاختبار"
-    # غير الرقم 0.5 هذا وجربه 0.1 أو 0.8
-THRESHOLD = 0.2    
+    # العتبة التي اتفقنا عليها
+    THRESHOLD = 0.2 
+    
     if health_val < THRESHOLD:
         st.success(f"النتيجة حسب الموديل: سليم (لأن القيمة {health_val:.4f} < {THRESHOLD})")
     else:
         dis_idx = np.argmax(m_disease.predict(x160, verbose=0))
         st.error(f"النتيجة حسب الموديل: مصاب (لأن القيمة {health_val:.4f} > {THRESHOLD})")
         st.write(f"التشخيص: {get_info(dis_idx)}")
-
+        
 tab1, tab2 = st.tabs(["📸 كاميرا", "📁 ملفات"])
 with tab1:
     photo = st.camera_input("التقط")
