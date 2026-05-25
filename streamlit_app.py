@@ -83,4 +83,154 @@ st.markdown("""
     }
     
     .stButton>button { 
-        background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+        background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%); 
+        color: white; 
+        border-radius: 12px; 
+        font-weight: bold; 
+        font-size: 16px;
+        padding: 10px 24px;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+    }
+    </style>
+    
+    <div class="welcome-card">
+        <div class="welcome-title">🌿 منصة P.L.A.N.T. M.E.D. AI</div>
+        <div class="welcome-subtitle">
+            مرحباً بكم دكاترة المستقبل في البروتوكول الرقمي المتكامل للتشخيص البيئي المعتمد على عقول الذكاء الاصطناعي التتابعية لفحص محاصيل النعناع والريحان.
+        </div>
+    </div>
+    
+    <div class="ai-engine-container">
+        <div class="ai-box">
+            <h5>الموديل الأول</h5>
+            <p>🧬 تصنيف العائلة النباتية</p>
+        </div>
+        <div class="ai-box">
+            <h5>الموديل الثاني</h5>
+            <p>🔍 كاشف الخلايا المصابة</p>
+        </div>
+        <div class="ai-box">
+            <h5>الموديل الثالث</h5>
+            <p>📊 بروتوكول العلاج والمكافحة</p>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+# --- 1. دالة تحميل وفك ضغط ملف الموديلات من المستودع السحابي ---
+@st.cache_resource
+def download_and_extract_models(model_filename):
+    zip_filename = "ahmed_hosny_models.zip"
+    extract_to = "models_data"
+    
+    hf_download_url = "https://huggingface.co/ahmedhosny2052005/TRI-SCIENCE-AI/resolve/main/%D8%A7%D8%AD%D9%85%D8%AF%20%D8%AD%D8%B3%D9%86%D9%8A.zip"
+    
+    if not os.path.exists(zip_filename) and not os.path.exists(extract_to):
+        with st.spinner('📥 جاري تحميل عقول المحاكاة من الخادم السحابي الآمن (322MB)... قد يستغرق ذلك دقيقة.'):
+            urllib.request.urlretrieve(hf_download_url, zip_filename)
+            
+    if not os.path.exists(extract_to):
+        with st.spinner('🔓 جاري فك ضغط وحقن الموديلات الذكية في الذاكرة الحالية...'):
+            with zipfile.ZipFile(zip_filename, 'r') as zip_ref:
+                zip_ref.extractall(extract_to)
+                
+    for root, dirs, files in os.walk(extract_to):
+        if model_filename in files:
+            return os.path.join(root, model_filename)
+            
+    raise FileNotFoundError(f"لم يتم العثور على الموديل: '{model_filename}' داخل المجلد المضغوط.")
+
+# --- 2. دالة استدعاء الموديلات بعد حقن الـ Patch ---
+@st.cache_resource
+def load_all_models():
+    path_plant = download_and_extract_models("Mint vs Basil.keras")
+    path_disease = download_and_extract_models("موديل الامراض.keras")
+    path_health = download_and_extract_models("موديل السليم.keras")
+    
+    return tf.keras.models.load_model(path_plant, compile=False), \
+           tf.keras.models.load_model(path_disease, compile=False), \
+           tf.keras.models.load_model(path_health, compile=False)
+
+# تشغيل عملية استدعاء النماذج وتأكيد النجاح
+try:
+    model_plant, model_disease, model_health = load_all_models()
+    st.success("تم تفعيل عقول المحاكاة الـ 3 بنجاح استراتيجي واكتمل ربط المنصة! 🎉")
+except Exception as e:
+    st.error(f"❌ خطأ تقني في استدعاء عقول المحاكاة: {e}")
+
+# --- 3. دالة بروتوكول العلاج والمكافحة الزراعية المتكاملة ---
+def get_treatment_sheet(disease_index):
+    sheet = {
+        0: {'عربي': 'البياض الزغبي (Downy Mildew)', 'الأسباب': 'رطوبة نسبية مرتفعة، ونقص تدوير الهواء داخل الصوبة الزراعية.', 'العلاج الطبيعي': 'تقليل فترات الري، وتقليم الأوراق القاعدية المصابة لتحسين التهوية الطبية.', 'العلاج الكيميائي': 'الرش الفوري بمبيدات نحاسية جهازية متخصصة تحت إشراف زراعي.'},
+        1: {'عربي': 'تبقع الأوراق الفطري (Leaf Spot)', 'الأسباب': 'تراكم رذاذ الماء على السطح العلوي للأوراق، وزيادة الكثافة النباتية في الأحواض.', 'العلاج الطبيعي': 'تعديل نظام الري ليكون جذرياً (بالتنقيط) وتجنب ري الأوراق علوياً، مع زيادة مسافات الشتل.', 'العلاج الكيميائي': 'مركبات فطرية وقائية واسعة المدى تحتوي على مادة الكابتان النشطة.'},
+        2: {'عربي': 'البياض الدقيقي (Powdery Mildew)', 'الأسباب': 'مناخ دافئ وجاف نهاراً مع ارتفاع الرطوبة ليلاً، وغياب الإضاءة والشمس المباشرة.', 'العلاج الطبيعي': 'المكافحة الحيوية باستخدام رش محلول بيكربونات البوتاسيوم أو زيت النيم الطبيعي المستخلص.', 'العلاج الكيميائي': 'استخدام مبيدات فطرية علاجية متخصصة تحتوي على مركب الـ Penconazole.'},
+        3: {'عربي': 'صدأ الأوراق الفطري (Mint Rust)', 'الأسباب': 'بيئة مشبعة بالرطوبة العالية الجوية، وانتشار جراثيم فطرية يوريدية برتقالية.', 'العلاج الطبيعي': 'حش كامل المجموع الخضري المصاب فوراً والتخلص منه بالهدم أو الحرق بعيداً عن الصوبة لمنع انتشار الأبواغ الخلوية.', 'العلاج الكيميائي': 'مركبات علاجية جهازية قوية تحتوي على مادة الـ Tebuconazole الفعالة.'}
+    }
+    return sheet.get(disease_index, {'عربي': 'آفة غير مألوفة', 'الأسباب': 'تحليل مخبري إضافي مطلوب لمعرفة السلالة النادرة.', 'العلاج الطبيعي': 'عزل العينات الفردية المريضة فوراً للحد من العدوى التبادلية.', 'العلاج الكيميائي': 'استشارة لجنة الدعم الفني الزراعي المختصة لإعداد تركيبة مخصصة.'})
+
+# --- 4. دالة معالجة الصورة والتنبؤ التتابعي ---
+def process_and_predict(image_data):
+    image_display = Image.open(image_data)
+    st.image(image_display, caption="📸 العينة الطبية المرفوعة للفحص الفوري في الصوبة", use_container_width=True)
+    
+    with st.spinner("⏳ جاري تحليل العينة وتشغيل عقول المحاكاة الـ 3 بالتناوب..."):
+        try:
+            # تم ضبط الأبعاد هنا على 160x160 لتوافق الموديل تماماً
+            img = image_display.resize((160, 160))
+            x = image.img_to_array(img)
+            x = np.expand_dims(x, axis=0) / 255.0
+            
+            plant_preds = model_plant.predict(x, verbose=0)
+            detected_plant = "ريحان (Basil)" if np.argmax(plant_preds) == 0 else "نعناع (Mint)"
+            
+            health_preds = model_health.predict(x, verbose=0)
+            is_healthy = np.argmax(health_preds) == 0
+            
+            st.markdown(f"### 📊 النتيجة المخبرية المبدئية للتصنيف: **{detected_plant}**")
+            
+            if is_healthy:
+                st.balloons()
+                st.markdown(f"""
+                <div class="healthy-box">
+                    <h3 style="color: #27ae60; margin-top:0;">✅ تقرير الحالة: عينة طبية سليمة (Healthy Plant)</h3>
+                    <p style="color: #34495e; font-size: 15px;">أظهرت التحليلات التوافقية للنماذج أن الأنسجة الخلوية لورقة الـ <b>{detected_plant}</b> سليمة تماماً وتخلو من المسببات الفطرية أو البكتيرية الحالية.</p>
+                    <p style="color: #16a085; font-weight: bold; margin-bottom: 0;">🌱 توصية الرعاية: استمر على معدلات التسميد والري الحالية مع المراقبة الدورية.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                disease_preds = model_disease.predict(x, verbose=0)
+                disease_idx = np.argmax(disease_preds)
+                info = get_treatment_sheet(disease_idx)
+                
+                st.markdown(f"""
+                <div class="report-box">
+                    <h3 style="color: #c0392b; margin-top:0;">🔬 التشخيص السريري: مصاب بـ {info['عربي']}</h3>
+                    <hr style="border: 0; border-top: 1px solid #f2d7d5; margin: 10px 0;">
+                    <p style="color: #2c3e50;"><b>⚠️ المسببات الإيكولوجية البيئية:</b> {info['الأسباب']}</p>
+                    <p style="color: #27ae60;"><b>🌱 بروتوكول المكافحة والوقاية الزراعية:</b> {info['العلاج الطبيعي']}</p>
+                    <p style="color: #2980b9;"><b>💊 العلاج الكيميائي والمبيدات الموصى بها:</b> {info['العلاج الكيميائي']}</p>
+                    <p style="font-size: 11px; color: #95a5a6; margin-top: 15px; text-align: left;">TRI SCIENCE AI - Integrated Multimodal System © 2026</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+        except Exception as e:
+            st.error(f"❌ خطأ تقني في قراءة المصفوفات الخلوية: {e}")
+
+# --- 5. واجهة الفرز والتبويبات الفنية للكاميرا والمعرض ---
+tab1, tab2 = st.tabs(["📸 مسح ضوئي حي (Scan)", "📁 استيراد عينة من المعرض"])
+
+with tab1:
+    st.subheader("تحليل فوري ومباشر عبر كاميرا المستشعر الذكي")
+    camera_photo = st.camera_input("ضع ورقة النبات في منتصف الإطار المخصص للفحص الفوري")
+    if camera_photo is not None:
+        process_and_predict(camera_photo)
+
+with tab2:
+    st.subheader("تحليل ملفات الصور المخزنة مسبقاً من الأجهزة")
+    uploaded_file = st.file_uploader("قم برفع ملف الصورة بصيغة مدعومة للحقل الزراعي...", type=["jpg", "jpeg", "png"])
+    if uploaded_file is not None:
+        process_and_predict(uploaded_file)
