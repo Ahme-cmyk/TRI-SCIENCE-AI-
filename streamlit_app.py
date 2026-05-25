@@ -9,7 +9,7 @@ import zipfile
 # 1. إعداد الصفحة بأعلى جودة احترافية تناسب مشروعك الأكاديمي
 st.set_page_config(page_title="P.L.A.N.T. M.E.D. AI", page_icon="🌿", layout="centered")
 
-# 2. هندسة التصميم الاحترافي والـ CSS (UI/UX Premium Design) لتبهر الدكاترة
+# 2. هندسة التصميم الاحترافي والـ CSS لتبهر الدكاترة
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;800&display=swap');
@@ -110,10 +110,9 @@ st.markdown("""
 # --- 1. دالة فك ضغط مستودع الموديلات بذكاء وديناميكية ---
 @st.cache_resource
 def extract_and_get_model_path(model_filename):
-    zip_filename = "احمد حسني.zip"  # تم تعديل اسم ملف الـ zip المرفوع بملفك بوجود المسافة بين الاسمين
+    zip_filename = "احمد حسني.zip"  # تم تعديل اسم الـ zip ليطابق ملفك المرفوع بالمسافة
     extract_to = "models_data"
     
-    # فك الضغط إذا لم يكن مفكوكاً مسبقاً تسريعاً للتشغيل
     if not os.path.exists(extract_to):
         if os.path.exists(zip_filename):
             with zipfile.ZipFile(zip_filename, 'r') as zip_ref:
@@ -121,7 +120,6 @@ def extract_and_get_model_path(model_filename):
         else:
             raise FileNotFoundError(f"ملف المستودع المضغوط '{zip_filename}' غير موجود في الخادم الحالي.")
             
-    # البحث الديناميكي عن الموديل داخل المجلد لضمان الوصول له أياً كان مساره الداخلي
     for root, dirs, files in os.walk(extract_to):
         if model_filename in files:
             return os.path.join(root, model_filename)
@@ -131,7 +129,7 @@ def extract_and_get_model_path(model_filename):
 # --- 2. دالة استدعاء الموديلات الثلاثة وتخزينها كـ Cache ---
 @st.cache_resource
 def load_all_models():
-    # تم تعديل المسميات بالملي لتتطابق مع ملفاتك المرفوعة من الداخل باللغتين والمسافات
+    # تعديل المسميات لتتطابق تماماً مع محتويات ملف الـ Zip من الداخل
     path_plant = extract_and_get_model_path("Mint vs Basil.keras")
     path_disease = extract_and_get_model_path("موديل الامراض.keras")
     path_health = extract_and_get_model_path("موديل السليم.keras")
@@ -140,9 +138,11 @@ def load_all_models():
            tf.keras.models.load_model(path_disease, compile=False), \
            tf.keras.models.load_model(path_health, compile=False)
 
-# تشغيل عملية استدعاء النماذج
+# تشغيل عملية استدعاء النماذج وتأكيد النجاح
 try:
-    model_plant, model_disease, model_health = load_all_models()
+    with st.spinner('⏳ جاري البحث عن الموديلات وفك ضغط المستودع...'):
+        model_plant, model_disease, model_health = load_all_models()
+    st.success("تم العثور على عقول المحاكاة الـ 3 وتشغيل التطبيق بنجاح! 🎉")
 except Exception as e:
     st.error(f"❌ خطأ تقني في استدعاء عقول المحاكاة: {e}")
 
@@ -163,23 +163,20 @@ def process_and_predict(image_data):
     
     with st.spinner("⏳ جاري تحليل العينة وتشغيل عقول المحاكاة الـ 3 بالتناوب..."):
         try:
-            # تجهيز مصفوفة الصورة وحجمها لتطابق شروط إدخال الـ Neural Networks
             img = image_display.resize((224, 224))
             x = image.img_to_array(img)
             x = np.expand_dims(x, axis=0) / 255.0
             
-            # الخطوة أ: تصنيف نوع النبات (نعناع أم ريحان)
             plant_preds = model_plant.predict(x, verbose=0)
             detected_plant = "ريحان (Basil)" if np.argmax(plant_preds) == 0 else "نعناع (Mint)"
             
-            # الخطوة ب: الفحص المبدئي للصحة (سليم أم مصاب)
             health_preds = model_health.predict(x, verbose=0)
             is_healthy = np.argmax(health_preds) == 0
             
             st.markdown(f"### 📊 النتيجة المخبرية المبدئية للتصنيف: **{detected_plant}**")
             
             if is_healthy:
-                st.balloons()  # تأثير مبهج للنجاح
+                st.balloons()
                 st.markdown(f"""
                 <div class="healthy-box">
                     <h3 style="color: #27ae60; margin-top:0;">✅ تقرير الحالة: عينة طبية سليمة (Healthy Plant)</h3>
@@ -188,7 +185,6 @@ def process_and_predict(image_data):
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                # الخطوة ج: استدعاء نموذج المرض في حال كانت العينة مصابة
                 disease_preds = model_disease.predict(x, verbose=0)
                 disease_idx = np.argmax(disease_preds)
                 info = get_treatment_sheet(disease_idx)
