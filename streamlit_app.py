@@ -67,28 +67,28 @@ except Exception as e:
 def predict(img_file):
     img = Image.open(img_file)
     st.image(img, use_container_width=True)
-    x160 = np.expand_dims(image.img_to_array(img.resize((160, 160))), axis=0) / 255.0
-    x224 = np.expand_dims(image.img_to_array(img.resize((224, 224))), axis=0) / 255.0
     
-    # التنبؤ
-    p_type = np.argmax(m_plant.predict(x224, verbose=0))
+    # تحضير الصور
+    x160 = np.expand_dims(image.img_to_array(img.resize((160, 160))), axis=0) / 255.0
+    
+    # الحصول على تنبؤات الموديلات
     health_val = m_health.predict(x160, verbose=0)[0][0]
     
-    # عرض النتائج في السايد بار (للتشخيص)
-    with st.sidebar:
-        st.write("📊 **تقرير العقل (للمراجعة):**")
-        st.write(f"قيمة الصحة الخام: {health_val:.4f}")
+    # عرض الأرقام الخام بوضوح تام
+    st.write("---")
+    st.write(f"### 🧪 تحليل العقل (قيم خام):")
+    st.write(f"قيمة الصحة (0=سليم, 1=مصاب): **{health_val:.4f}**")
     
-    st.write(f"### النوع: {'ريحان' if p_type == 0 else 'نعناع'}")
+    # هنا نضع "عتبة الاختبار"
+    # غير الرقم 0.5 هذا وجربه 0.1 أو 0.8
+    THRESHOLD = 0.5 
     
-    # منطق التشخيص المرن
-    # إذا كانت القيمة قريبة جداً من 0، فهو سليم. 
-    # إذا كانت القيمة تتغير عند وضع صور مصابة، نحتاج لتعديل 0.3
-    if health_val < 0.5: # رفعنا العتبة قليلاً ليكون الموديل أكثر حساسية
-        st.success(f"✅ العينة سليمة (الثقة: {1-health_val:.2f})")
+    if health_val < THRESHOLD:
+        st.success(f"النتيجة حسب الموديل: سليم (لأن القيمة {health_val:.4f} < {THRESHOLD})")
     else:
         dis_idx = np.argmax(m_disease.predict(x160, verbose=0))
-        st.error(f"⚠️ العينة مصابة (تشخيص: {get_info(dis_idx)})")
+        st.error(f"النتيجة حسب الموديل: مصاب (لأن القيمة {health_val:.4f} > {THRESHOLD})")
+        st.write(f"التشخيص: {get_info(dis_idx)}")
 
 tab1, tab2 = st.tabs(["📸 كاميرا", "📁 ملفات"])
 with tab1:
