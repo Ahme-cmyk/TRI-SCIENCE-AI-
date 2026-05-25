@@ -10,7 +10,17 @@ import urllib.request
 # 1. إعداد الصفحة بأعلى جودة احترافية تناسب مشروعك الأكاديمي
 st.set_page_config(page_title="P.L.A.N.T. M.E.D. AI", page_icon="🌿", layout="centered")
 
-# 2. هندسة التصميم الاحترافي والـ CSS (UI/UX Premium Design) لتبهر الدكاترة
+# حل برمي مخصص لتخطي تعارض إصدارات Keras والـ quantization_config
+from tensorflow.keras.utils import register_keras_serializable
+
+@register_keras_serializable()
+class CustomDense(tf.keras.layers.Dense):
+    def __init__(self, *args, **kwargs):
+        # حذف المعامل المسبب للمشكلة إذا وجد في سيرفرات التثبيت القديمة
+        kwargs.pop('quantization_config', None)
+        super().__init__(*args, **kwargs)
+
+# 2. هندسة التصميم الاحترافي والـ CSS لتبهر الدكاترة
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;800&display=swap');
@@ -88,7 +98,7 @@ st.markdown("""
     <div class="welcome-card">
         <div class="welcome-title">🌿 منصة P.L.A.N.T. M.E.D. AI</div>
         <div class="welcome-subtitle">
-            مرحباً بكم في البروتوكول الرقمي المتكامل للتشخيص البيئي المعتمد على عقول الذكاء الاصطناعي التتابعية لفحص محاصيل النعناع والريحان.
+            مرحباً بكم دكاترة المستقبل في البروتوكول الرقمي المتكامل للتشخيص البيئي المعتمد على عقول الذكاء الاصطناعي التتابعية لفحص محاصيل النعناع والريحان.
         </div>
     </div>
     
@@ -108,43 +118,42 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- 1. دالة سريعة لتحميل وفك ضغط ملف الموديلات من المستودع السحابي الحقيقي الخاص بك ---
+# --- 1. دالة تحميل وفك ضغط ملف الموديلات من المستودع السحابي الحقيقي الخاص بك ---
 @st.cache_resource
 def download_and_extract_models(model_filename):
     zip_filename = "ahmed_hosny_models.zip"
     extract_to = "models_data"
     
-    # الرابط المباشر للملف الأصلي المكتمل المرفوع في حساب الـ Hugging Face الخاص بك
     hf_download_url = "https://huggingface.co/ahmedhosny2052005/TRI-SCIENCE-AI/resolve/main/%D8%A7%D8%AD%D9%85%D8%AF%20%D8%AD%D8%B3%D9%86%D9%8A.zip"
     
-    # تحميل الملف إذا لم يكن موجوداً على سيرفر ستريم ليت
     if not os.path.exists(zip_filename) and not os.path.exists(extract_to):
         with st.spinner('📥 جاري تحميل عقول المحاكاة من الخادم السحابي الآمن (322MB)... قد يستغرق ذلك دقيقة.'):
             urllib.request.urlretrieve(hf_download_url, zip_filename)
             
-    # فك الضغط
     if not os.path.exists(extract_to):
         with st.spinner('🔓 جاري فك ضغط وحقن الموديلات الذكية في الذاكرة الحالية...'):
             with zipfile.ZipFile(zip_filename, 'r') as zip_ref:
                 zip_ref.extractall(extract_to)
                 
-    # البحث الديناميكي عن اسم الموديل المطلوب
     for root, dirs, files in os.walk(extract_to):
         if model_filename in files:
             return os.path.join(root, model_filename)
             
     raise FileNotFoundError(f"لم يتم العثور على الموديل: '{model_filename}' داخل المجلد المضغوط.")
 
-# --- 2. دالة استدعاء الموديلات الثلاثة وتخزينها كـ Cache ---
+# --- 2. دالة استدعاء الموديلات الثلاثة وتخزينها كـ Cache مع تمرير الطبقة المخصصة ---
 @st.cache_resource
 def load_all_models():
     path_plant = download_and_extract_models("Mint vs Basil.keras")
     path_disease = download_and_extract_models("موديل الامراض.keras")
     path_health = download_and_extract_models("موديل السليم.keras")
     
-    return tf.keras.models.load_model(path_plant, compile=False), \
-           tf.keras.models.load_model(path_disease, compile=False), \
-           tf.keras.models.load_model(path_health, compile=False)
+    # إجبار كيرات على قراءة الموديل وتخطي الـ quantization_config عبر تعيين الكائن المخصص
+    custom_objects = {'Dense': CustomDense}
+    
+    return tf.keras.models.load_model(path_plant, compile=False, custom_objects=custom_objects), \
+           tf.keras.models.load_model(path_disease, compile=False, custom_objects=custom_objects), \
+           tf.keras.models.load_model(path_health, compile=False, custom_objects=custom_objects)
 
 # تشغيل عملية استدعاء النماذج وتأكيد النجاح
 try:
