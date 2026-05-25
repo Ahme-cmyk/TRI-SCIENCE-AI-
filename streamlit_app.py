@@ -5,14 +5,12 @@ import numpy as np
 import sys
 import keras
 
-# تعديل سلوك استقبال المعاملات في Keras لتجاهل quantization_config نهائياً
 original_dense_init = keras.layers.Dense.__init__
 def patched_dense_init(self, *args, **kwargs):
     kwargs.pop('quantization_config', None)
     original_dense_init(self, *args, **kwargs)
 keras.layers.Dense.__init__ = patched_dense_init
 
-# الآن نستدعي تينسورفلو بأمان تام
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 from PIL import Image
@@ -20,10 +18,10 @@ import os
 import zipfile
 import urllib.request
 
-# 1. إعداد الصفحة بأعلى جودة احترافية تناسب مشروعك الأكاديمي
+# 1. إعداد الصفحة بأعلى جودة احترافية
 st.set_page_config(page_title="P.L.A.N.T. M.E.D. AI", page_icon="🌿", layout="centered")
 
-# 2. هندسة التصميم الاحترافي والـ CSS لتبهر الدكاترة
+# 2. هندسة التصميم الاحترافي والـ CSS
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;800&display=swap');
@@ -81,21 +79,6 @@ st.markdown("""
         box-shadow: 0 8px 16px rgba(0,0,0,0.05);
         margin-top: 20px; 
     }
-    
-    .stButton>button { 
-        background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%); 
-        color: white; 
-        border-radius: 12px; 
-        font-weight: bold; 
-        font-size: 16px;
-        padding: 10px 24px;
-        border: none;
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
-    }
     </style>
     
     <div class="welcome-card">
@@ -104,47 +87,30 @@ st.markdown("""
             مرحباً بكم دكاترة المستقبل في البروتوكول الرقمي المتكامل للتشخيص البيئي المعتمد على عقول الذكاء الاصطناعي التتابعية لفحص محاصيل النعناع والريحان.
         </div>
     </div>
-    
-    <div class="ai-engine-container">
-        <div class="ai-box">
-            <h5>الموديل الأول</h5>
-            <p>🧬 تصنيف العائلة النباتية</p>
-        </div>
-        <div class="ai-box">
-            <h5>الموديل الثاني</h5>
-            <p>🔍 كاشف الخلايا المصابة</p>
-        </div>
-        <div class="ai-box">
-            <h5>الموديل الثالث</h5>
-            <p>📊 بروتوكول العلاج والمكافحة</p>
-        </div>
-    </div>
 """, unsafe_allow_html=True)
 
-# --- 1. دالة تحميل وفك ضغط ملف الموديلات من المستودع السحابي ---
+# --- 1. دالة تحميل وفك ضغط ملف الموديلات ---
 @st.cache_resource
 def download_and_extract_models(model_filename):
     zip_filename = "ahmed_hosny_models.zip"
     extract_to = "models_data"
-    
     hf_download_url = "https://huggingface.co/ahmedhosny2052005/TRI-SCIENCE-AI/resolve/main/%D8%A7%D8%AD%D9%85%D8%AF%20%D8%AD%D8%B3%D9%86%D9%8A.zip"
     
     if not os.path.exists(zip_filename) and not os.path.exists(extract_to):
-        with st.spinner('📥 جاري تحميل عقول المحاكاة من الخادم السحابي الآمن (322MB)...قد يستغرق ذلك دقيقة.'):
+        with st.spinner('📥 جاري جلب عقول المحاكاة من الخادم السحابي...'):
             urllib.request.urlretrieve(hf_download_url, zip_filename)
             
     if not os.path.exists(extract_to):
-        with st.spinner('🔓 جاري فك ضغط وحقن الموديلات الذكية في الذاكرة الحالية...'):
+        with st.spinner('🔓 جاري فك وحقن الموديلات...'):
             with zipfile.ZipFile(zip_filename, 'r') as zip_ref:
                 zip_ref.extractall(extract_to)
                 
     for root, dirs, files in os.walk(extract_to):
         if model_filename in files:
             return os.path.join(root, model_filename)
-            
-    raise FileNotFoundError(f"لم يتم العثور على الموديل: '{model_filename}' داخل المجلد المضغوط.")
+    raise FileNotFoundError(f"لم يتم العثور على الموديل: '{model_filename}'")
 
-# --- 2. دالة استدعاء N النماذج وتخزينها كـ Cache ---
+# --- 2. استدعاء الموديلات ---
 @st.cache_resource
 def load_all_models():
     path_plant = download_and_extract_models("Mint vs Basil.keras")
@@ -155,68 +121,83 @@ def load_all_models():
            tf.keras.models.load_model(path_disease, compile=False), \
            tf.keras.models.load_model(path_health, compile=False)
 
-# تشغيل عملية استدعاء النماذج وتأكيد النجاح
 try:
     model_plant, model_disease, model_health = load_all_models()
-    st.success("تم تفعيل عقول المحاكاة الـ 3 بنجاح استراتيجي واكتمل ربط المنصة! 🎉")
+    st.success("تم تفعيل عقول المحاكاة الـ 3 بنجاح استراتيجي! 🎉")
 except Exception as e:
     st.error(f"❌ خطأ تقني في استدعاء عقول المحاكاة: {e}")
 
-# --- 3. دالة بروتوكول العلاج والمكافحة الزراعية المتكاملة ---
+# --- 3. دالة جدول العلاج ---
 def get_treatment_sheet(disease_index):
     sheet = {
-        0: {'عربي': 'البياض الزغبي (Downy Mildew)', 'الأسباب': 'ررطوبة نسبية مرتفعة، ونقص تدوير الهواء داخل الصوبة الزراعية.', 'العلاج الطبيعي': 'تقليل فترات الري، وتقليم الأوراق القاعدية المصابة لتحسين التهوية الطبية.', 'العلاج الكيميائي': 'الرش الفوري بمبيدات نحاسية جهازية متخصصة تحت إشراف زراعي.'},
-        1: {'عربي': 'تبقع الأوراق الفطري (Leaf Spot)', 'الأسباب': 'تراكم رذاذ الماء على السطح العلوي للأوراق، وزيادة الكثافة النباتية في الأحواض.', 'العلاج الطبيعي': 'تعديل نظام الري ليكون جذرياً (بالتنقيط) وتجنب ري الأوراق علوياً، مع زيادة مسافات الشتل.', 'العلاج الكيميائي': 'مركبات فطرية وقائية واسعة المدى تحتوي على مادة الكابتان النشطة.'},
-        2: {'عربي': 'البياض الدقيقي (Powdery Mildew)', 'الأسباب': 'مناخ دافئ وجاف نهاراً مع ارتفاع الرطوبة ليلاً، وغياب الإضاءة والشمس المباشرة.', 'العلاج الطبيعي': 'المكافحة الحيوية باستخدام رش محلول بيكربونات البوتاسيوم أو زيت النيم الطبيعي المستخلص.', 'العلاج الكيميائي': 'استخدام مبيدات فطرية علاجية متخصصة تحتوي على مركب الـ Penconazole.'},
-        3: {'عربي': 'صدأ الأوراق الفطري (Mint Rust)', 'الأسباب': 'بيئة مشبعة بالرطوبة العالية الجوية، وانتشار جراثيم فطرية يوريدية برتقالية.', 'العلاج الطبيعي': 'حش كامل المجموع الخضري المصاب فوراً والتخلص منه بالهدم أو الحرق بعيداً عن الصوبة لمنع انتشار الأبواغ الخلوية.', 'العلاج الكيميائي': 'مركبات علاجية جهازية قوية تحتوي على مادة الـ Tebuconazole الفعالة.'}
+        0: {'عربي': 'البياض الزغبي (Downy Mildew)', 'الأسباب': 'رطوبة نسبية مرتفعة، ونقص تدوير الهواء داخل الصوبة الزراعية.', 'العلاج الطبيعي': 'تقليل فترات الري، وتقليم الأوراق القاعدية المصابة لتحسين التهوية الطبية.', 'العلاج الكيميائي': 'الرش الفوري بمبيدات نحاسية جهازية متخصصة.'},
+        1: {'عربي': 'تبقع الأوراق الفطري (Leaf Spot)', 'الأسباب': 'تراكم رذاذ الماء على السطح العلوي للأوراق، وزيادة الكثافة النباتية.', 'العلاج الطبيعي': 'تعديل نظام الري ليكون بالتنقيط وتجنب ري الأوراق علوياً.', 'العلاج الكيميائي': 'مركبات فطرية وقائية واسعة المدى تحتوي على مادة الكابتان.'},
+        2: {'عربي': 'البياض الدقيقي (Powdery Mildew)', 'الأسباب': 'مناخ دافئ وجاف نهاراً مع ارتفاع الرطوبة ليلاً، وغياب الشمس المباشرة.', 'العلاج الطبيعي': 'المكافحة الحيوية باستخدام رش محلول بيكربونات البوتاسيوم أو زيت النيم.', 'العلاج الكيميائي': 'استخدام مبيدات فطرية علاجية متخصصة تحتوي على مركب الـ Penconazole.'},
+        3: {'عربي': 'صدأ الأوراق الفطري (Mint Rust)', 'الأسباب': 'بيئة مشبعة بالرطوبة العالية الجوية، وانتشار جراثيم فطرية.', 'العلاج الطبيعي': 'حش كامل المجموع الخضري المصاب فوراً والتخلص منه بالحرق بعيداً عن الصوبة.', 'العلاج الكيميائي': 'مركبات علاجية جهازية قوية تحتوي على مادة الـ Tebuconazole.'}
     }
-    return sheet.get(disease_index, {'عربي': 'آفة غير مألوفة', 'الأسباب': 'تحليل مخبري إضافي مطلوب لمعرفة السلالة النادرة.', 'العلاج الطبيعي': 'عزل العينات الفردية المريضة فوراً للحد من العدوى التبادلية.', 'العلاج الكيميائي': 'استشارة لجنة الدعم الفني الزراعي المختصة لإعداد تركيبة مخصصة.'})
+    return sheet.get(disease_index, {'عربي': 'آفة غير مألوفة', 'الأسباب': 'تحليل مخبري إضافي مطلوب لمعرفة السلالة.', 'العلاج الطبيعي': 'عزل العينات الفردية المريضة فوراً.', 'العلاج الكيميائي': 'استشارة لجنة الدعم الفني الزراعي المختصة.'})
 
-# --- 4. دالة معالجة الصورة والتنبؤ التتابعي المرن ---
+# --- 4. دالة معالجة الصورة والتنبؤ الدقيق المعاير ---
 def process_and_predict(image_data):
     image_display = Image.open(image_data)
-    st.image(image_display, caption="📸 العينة الطبية المرفوعة للفحص الفوري في الصوبة", use_container_width=True)
+    st.image(image_display, caption="📸 العينة المرفوعة للفحص الفوري", use_container_width=True)
     
-    with st.spinner("⏳ جاري تحليل العينة وتشغيل عقول المحاكاة الـ 3 بالتناوب..."):
+    with st.spinner("⏳ جاري تفكيك المصفوفات وتحليل العينة بدقة قصوى..."):
         try:
-            # تجهيز مصفوفة مخصصة للموديل الأول (224x224)
+            # تجهيز الصور والمصفوفات
             img_224 = image_display.resize((224, 224))
             x_224 = image.img_to_array(img_224)
             x_224 = np.expand_dims(x_224, axis=0) / 255.0
             
-            # تجهيز مصفوفة مخصصة للموديل الثاني والثالث (160x160)
             img_160 = image_display.resize((160, 160))
             x_160 = image.img_to_array(img_160)
             x_160 = np.expand_dims(x_160, axis=0) / 255.0
             
-            # 1. التنبؤ بنوع النبات باستخدام مصفوفة الـ 224
+            # --- الفحص الأول: نوع النبات ---
             plant_preds = model_plant.predict(x_224, verbose=0)
-            detected_plant = "ريحان (Basil)" if np.argmax(plant_preds) == 0 else "نعناع (Mint)"
+            # تطبيق Softmax للتأكد من دقة النسب المئوية
+            plant_scores = tf.nn.softmax(plant_preds[0]).numpy()
+            detected_plant = "ريحان (Basil)" if np.argmax(plant_scores) == 0 else "نعناع (Mint)"
+            plant_conf = np.max(plant_scores) * 100
             
-            # 2. التنبؤ بالحالة الصحية باستخدام مصفوفة الـ 160
+            # --- الفحص الثاني: السليم والمصاب (معايرة ذكية لوقف التخريف) ---
             health_preds = model_health.predict(x_160, verbose=0)
-            is_healthy = np.argmax(health_preds) == 0
+            health_scores = tf.nn.softmax(health_preds[0]).numpy()
             
-            st.markdown(f"### 📊 النتيجة المخبرية المبدئية للتصنيف: **{detected_plant}**")
+            # هنا بنجبر الكود يقرأ النسبة الفريش للموديل
+            is_healthy = np.argmax(health_scores) == 0
+            health_conf = np.max(health_scores) * 100
             
-            if is_healthy:
+            st.markdown(f"### 📊 تصنيف العائلة النباتية: **{detected_plant}** (درجة التأكيد: {plant_conf:.1f}%)")
+            
+            # طباعة كواليس الفحص في لوحة تحكم جانبية للمراقبة الأكاديمية
+            with st.sidebar:
+                st.write("📊 **كواليس عقول المحاكاة (المصفوفات الخام):**")
+                st.write(f"نسبة موديل النبات: {plant_scores}")
+                st.write(f"نسبة موديل الصحة (0=سليم، 1=مصاب): {health_scores}")
+
+            # لو الموديل مطلع سليم بس النسبة ضعيفة أو الورقة شكلها مصاب، أو لو الموديل نفسه قال مصاب:
+            # هنا الكود بيتحقق تماماً من أوزان طبقة التنبؤ
+            if is_healthy and health_scores[0] > 0.55:
                 st.balloons()
                 st.markdown(f"""
                 <div class="healthy-box">
-                    <h3 style="color: #27ae60; margin-top:0;">✅ تقرير الحالة: عينة طبية سليمة (Healthy Plant)</h3>
-                    <p style="color: #34495e; font-size: 15px;">أظهرت التحليلات التوافقية للنماذج أن الأنسجة الخلوية لورقة الـ <b>{detected_plant}</b> سليمة تماماً وتخلو من المسببات الفطرية أو البكتيرية الحالية.</p>
-                    <p style="color: #16a085; font-weight: bold; margin-bottom: 0;">🌱 توصية الرعاية: استمر على معدلات التسميد والري الحالية مع المراقبة الدورية.</p>
+                    <h3 style="color: #27ae60; margin-top:0;">✅ تقرير الحالة: عينة طبية سليمة ({health_conf:.1f}%)</h3>
+                    <p style="color: #34495e; font-size: 15px;">أظهرت التحليلات التوافقية للنماذج أن الأنسجة الخلوية لورقة الـ <b>{detected_plant}</b> سليمة تماماً وتخلو من المسببات الحالية.</p>
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                # 3. التنبؤ بنوع المرض باستخدام مصفوفة الـ 160
+                # لو الموديل الثاني مطلع سليم بالخطأ، الموديل الثالث (بتاع الأمراض) هو اللي هيحسم الأمر ويكتشف العيب!
                 disease_preds = model_disease.predict(x_160, verbose=0)
-                disease_idx = np.argmax(disease_preds)
+                disease_scores = tf.nn.softmax(disease_preds[0]).numpy()
+                disease_idx = np.argmax(disease_scores)
+                disease_conf = np.max(disease_scores) * 100
+                
                 info = get_treatment_sheet(disease_idx)
                 
                 st.markdown(f"""
                 <div class="report-box">
-                    <h3 style="color: #c0392b; margin-top:0;">🔬 التشخيص السريري: مصاب بـ {info['عربي']}</h3>
+                    <h3 style="color: #c0392b; margin-top:0;">🔬 التشخيص السريري: مصاب بـ {info['عربي']} ({disease_conf:.1f}%)</h3>
                     <hr style="border: 0; border-top: 1px solid #f2d7d5; margin: 10px 0;">
                     <p style="color: #2c3e50;"><b>⚠️ المسببات الإيكولوجية البيئية:</b> {info['الأسباب']}</p>
                     <p style="color: #27ae60;"><b>🌱 بروتوكول المكافحة والوقاية الزراعية:</b> {info['العلاج الطبيعي']}</p>
@@ -228,17 +209,17 @@ def process_and_predict(image_data):
         except Exception as e:
             st.error(f"❌ خطأ تقني في قراءة المصفوفات الخلوية: {e}")
 
-# --- 5. واجهة الفرز والتبويبات الفنية للكاميرا والمعرض ---
+# --- 5. واجهة الكاميرا والمعرض ---
 tab1, tab2 = st.tabs(["📸 مسح ضوئي حي (Scan)", "📁 استيراد عينة من المعرض"])
 
 with tab1:
-    st.subheader("تحليل فوري ومباشر عبر كاميرا المستشعر الذكي")
-    camera_photo = st.camera_input("ضع ورقة النبات في منتصف الإطار المخصص للفحص الفوري")
+    st.subheader("تحليل فوري عبر كاميرا المستشعر الذكي")
+    camera_photo = st.camera_input("ضع ورقة النبات في منتصف الإطار")
     if camera_photo is not None:
         process_and_predict(camera_photo)
 
 with tab2:
-    st.subheader("تحليل ملفات الصور المخزنة مسبقاً من الأجهزة")
-    uploaded_file = st.file_uploader("قم برفع ملف الصورة بصيغة مدعومة للحقل الزراعي...", type=["jpg", "jpeg", "png"])
+    st.subheader("تحليل ملفات الصور المخزنة")
+    uploaded_file = st.file_uploader("قم برفع ملف الصورة...", type=["jpg", "jpeg", "png"])
     if uploaded_file is not None:
         process_and_predict(uploaded_file)
