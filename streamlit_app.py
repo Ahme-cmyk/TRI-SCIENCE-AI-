@@ -1,5 +1,18 @@
 import streamlit as st
 import numpy as np
+
+# --- حركة برمجية استراتيجية لعمل Patch لمكتبة Keras قبل استدعاء TensorFlow ---
+import sys
+import keras
+
+# تعديل سلوك استقبال المعاملات في Keras لتجاهل quantization_config نهائياً
+original_dense_init = keras.layers.Dense.__init__
+def patched_dense_init(self, *args, **kwargs):
+    kwargs.pop('quantization_config', None)
+    original_dense_init(self, *args, **kwargs)
+keras.layers.Dense.__init__ = patched_dense_init
+
+# الآن نستدعي تينسورفلو بأمان تام
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 from PIL import Image
@@ -9,16 +22,6 @@ import urllib.request
 
 # 1. إعداد الصفحة بأعلى جودة احترافية تناسب مشروعك الأكاديمي
 st.set_page_config(page_title="P.L.A.N.T. M.E.D. AI", page_icon="🌿", layout="centered")
-
-# حل برمي مخصص لتخطي تعارض إصدارات Keras والـ quantization_config
-from tensorflow.keras.utils import register_keras_serializable
-
-@register_keras_serializable()
-class CustomDense(tf.keras.layers.Dense):
-    def __init__(self, *args, **kwargs):
-        # حذف المعامل المسبب للمشكلة إذا وجد في سيرفرات التثبيت القديمة
-        kwargs.pop('quantization_config', None)
-        super().__init__(*args, **kwargs)
 
 # 2. هندسة التصميم الاحترافي والـ CSS لتبهر الدكاترة
 st.markdown("""
@@ -118,7 +121,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- 1. دالة تحميل وفك ضغط ملف الموديلات من المستودع السحابي الحقيقي الخاص بك ---
+# --- 1. دالة تحميل وفك ضغط ملف الموديلات من المستودع السحابي ---
 @st.cache_resource
 def download_and_extract_models(model_filename):
     zip_filename = "ahmed_hosny_models.zip"
@@ -141,19 +144,17 @@ def download_and_extract_models(model_filename):
             
     raise FileNotFoundError(f"لم يتم العثور على الموديل: '{model_filename}' داخل المجلد المضغوط.")
 
-# --- 2. دالة استدعاء الموديلات الثلاثة وتخزينها كـ Cache مع تمرير الطبقة المخصصة ---
+# --- 2. دالة استدعاء الموديلات بعد حقن الـ Patch ---
 @st.cache_resource
 def load_all_models():
     path_plant = download_and_extract_models("Mint vs Basil.keras")
     path_disease = download_and_extract_models("موديل الامراض.keras")
     path_health = download_and_extract_models("موديل السليم.keras")
     
-    # إجبار كيرات على قراءة الموديل وتخطي الـ quantization_config عبر تعيين الكائن المخصص
-    custom_objects = {'Dense': CustomDense}
-    
-    return tf.keras.models.load_model(path_plant, compile=False, custom_objects=custom_objects), \
-           tf.keras.models.load_model(path_disease, compile=False, custom_objects=custom_objects), \
-           tf.keras.models.load_model(path_health, compile=False, custom_objects=custom_objects)
+    # تحميل مباشر لأن الـ Patch شغال في الخلفية الآن
+    return tf.keras.models.load_model(path_plant, compile=False), \
+           tf.keras.models.load_model(path_disease, compile=False), \
+           tf.keras.models.load_model(path_health, compile=False)
 
 # تشغيل عملية استدعاء النماذج وتأكيد النجاح
 try:
