@@ -130,7 +130,7 @@ def download_and_extract_models(model_filename):
     hf_download_url = "https://huggingface.co/ahmedhosny2052005/TRI-SCIENCE-AI/resolve/main/%D8%A7%D8%AD%D9%85%D8%AF%20%D8%AD%D8%B3%D9%86%D9%8A.zip"
     
     if not os.path.exists(zip_filename) and not os.path.exists(extract_to):
-        with st.spinner('📥 جاري تحميل عقول المحاكاة من الخادم السحابي الآمن (322MB)... قد يستغرق ذلك دقيقة.'):
+        with st.spinner('📥 جاري تحميل عقول المحاكاة من الخادم السحابي الآمن (322MB)...قد يستغرق ذلك دقيقة.'):
             urllib.request.urlretrieve(hf_download_url, zip_filename)
             
     if not os.path.exists(extract_to):
@@ -144,7 +144,7 @@ def download_and_extract_models(model_filename):
             
     raise FileNotFoundError(f"لم يتم العثور على الموديل: '{model_filename}' داخل المجلد المضغوط.")
 
-# --- 2. دالة استدعاء الموديلات بعد حقن الـ Patch ---
+# --- 2. دالة استدعاء N النماذج وتخزينها كـ Cache ---
 @st.cache_resource
 def load_all_models():
     path_plant = download_and_extract_models("Mint vs Basil.keras")
@@ -165,29 +165,36 @@ except Exception as e:
 # --- 3. دالة بروتوكول العلاج والمكافحة الزراعية المتكاملة ---
 def get_treatment_sheet(disease_index):
     sheet = {
-        0: {'عربي': 'البياض الزغبي (Downy Mildew)', 'الأسباب': 'رطوبة نسبية مرتفعة، ونقص تدوير الهواء داخل الصوبة الزراعية.', 'العلاج الطبيعي': 'تقليل فترات الري، وتقليم الأوراق القاعدية المصابة لتحسين التهوية الطبية.', 'العلاج الكيميائي': 'الرش الفوري بمبيدات نحاسية جهازية متخصصة تحت إشراف زراعي.'},
+        0: {'عربي': 'البياض الزغبي (Downy Mildew)', 'الأسباب': 'ررطوبة نسبية مرتفعة، ونقص تدوير الهواء داخل الصوبة الزراعية.', 'العلاج الطبيعي': 'تقليل فترات الري، وتقليم الأوراق القاعدية المصابة لتحسين التهوية الطبية.', 'العلاج الكيميائي': 'الرش الفوري بمبيدات نحاسية جهازية متخصصة تحت إشراف زراعي.'},
         1: {'عربي': 'تبقع الأوراق الفطري (Leaf Spot)', 'الأسباب': 'تراكم رذاذ الماء على السطح العلوي للأوراق، وزيادة الكثافة النباتية في الأحواض.', 'العلاج الطبيعي': 'تعديل نظام الري ليكون جذرياً (بالتنقيط) وتجنب ري الأوراق علوياً، مع زيادة مسافات الشتل.', 'العلاج الكيميائي': 'مركبات فطرية وقائية واسعة المدى تحتوي على مادة الكابتان النشطة.'},
         2: {'عربي': 'البياض الدقيقي (Powdery Mildew)', 'الأسباب': 'مناخ دافئ وجاف نهاراً مع ارتفاع الرطوبة ليلاً، وغياب الإضاءة والشمس المباشرة.', 'العلاج الطبيعي': 'المكافحة الحيوية باستخدام رش محلول بيكربونات البوتاسيوم أو زيت النيم الطبيعي المستخلص.', 'العلاج الكيميائي': 'استخدام مبيدات فطرية علاجية متخصصة تحتوي على مركب الـ Penconazole.'},
         3: {'عربي': 'صدأ الأوراق الفطري (Mint Rust)', 'الأسباب': 'بيئة مشبعة بالرطوبة العالية الجوية، وانتشار جراثيم فطرية يوريدية برتقالية.', 'العلاج الطبيعي': 'حش كامل المجموع الخضري المصاب فوراً والتخلص منه بالهدم أو الحرق بعيداً عن الصوبة لمنع انتشار الأبواغ الخلوية.', 'العلاج الكيميائي': 'مركبات علاجية جهازية قوية تحتوي على مادة الـ Tebuconazole الفعالة.'}
     }
     return sheet.get(disease_index, {'عربي': 'آفة غير مألوفة', 'الأسباب': 'تحليل مخبري إضافي مطلوب لمعرفة السلالة النادرة.', 'العلاج الطبيعي': 'عزل العينات الفردية المريضة فوراً للحد من العدوى التبادلية.', 'العلاج الكيميائي': 'استشارة لجنة الدعم الفني الزراعي المختصة لإعداد تركيبة مخصصة.'})
 
-# --- 4. دالة معالجة الصورة والتنبؤ التتابعي ---
+# --- 4. دالة معالجة الصورة والتنبؤ التتابعي المرن ---
 def process_and_predict(image_data):
     image_display = Image.open(image_data)
     st.image(image_display, caption="📸 العينة الطبية المرفوعة للفحص الفوري في الصوبة", use_container_width=True)
     
     with st.spinner("⏳ جاري تحليل العينة وتشغيل عقول المحاكاة الـ 3 بالتناوب..."):
         try:
-            # تم ضبط الأبعاد هنا على 160x160 لتوافق الموديل تماماً
-            img = image_display.resize((160, 160))
-            x = image.img_to_array(img)
-            x = np.expand_dims(x, axis=0) / 255.0
+            # تجهيز مصفوفة مخصصة للموديل الأول (224x224)
+            img_224 = image_display.resize((224, 224))
+            x_224 = image.img_to_array(img_224)
+            x_224 = np.expand_dims(x_224, axis=0) / 255.0
             
-            plant_preds = model_plant.predict(x, verbose=0)
+            # تجهيز مصفوفة مخصصة للموديل الثاني والثالث (160x160)
+            img_160 = image_display.resize((160, 160))
+            x_160 = image.img_to_array(img_160)
+            x_160 = np.expand_dims(x_160, axis=0) / 255.0
+            
+            # 1. التنبؤ بنوع النبات باستخدام مصفوفة الـ 224
+            plant_preds = model_plant.predict(x_224, verbose=0)
             detected_plant = "ريحان (Basil)" if np.argmax(plant_preds) == 0 else "نعناع (Mint)"
             
-            health_preds = model_health.predict(x, verbose=0)
+            # 2. التنبؤ بالحالة الصحية باستخدام مصفوفة الـ 160
+            health_preds = model_health.predict(x_160, verbose=0)
             is_healthy = np.argmax(health_preds) == 0
             
             st.markdown(f"### 📊 النتيجة المخبرية المبدئية للتصنيف: **{detected_plant}**")
@@ -202,7 +209,8 @@ def process_and_predict(image_data):
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                disease_preds = model_disease.predict(x, verbose=0)
+                # 3. التنبؤ بنوع المرض باستخدام مصفوفة الـ 160
+                disease_preds = model_disease.predict(x_160, verbose=0)
                 disease_idx = np.argmax(disease_preds)
                 info = get_treatment_sheet(disease_idx)
                 
