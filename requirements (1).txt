@@ -1,4 +1,4 @@
 streamlit
 tensorflow
-h5py
-huggingface_hub
+numpy
+Pillow
