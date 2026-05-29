@@ -95,15 +95,14 @@ if final_image is not None:
             pred_health = m_health.predict(img_160)
             pred_disease = m_disease.predict(img_224)
 
-           # 1. تحديد نوع النبات (تم الضبط: 0 يعني نعناع، 1 يعني ريحان)
+            # 1. تحديد نوع النبات المظبوط
             plant_classes = ["نعناع", "ريحان"]
             plant_index = np.argmax(pred_plant)
             detected_plant = plant_classes[plant_index]
             
             st.success(f"📌 **نوع النبات المكتشف:** {detected_plant}")
-            
 
-            # 2. تحديد الحالة الصحية (بناءً على Sigmoid مخرج واحد)
+            # 2. تحديد الحالة الصحية 
             health_value = pred_health[0][0]
             is_healthy = health_value < 0.5 
             
@@ -113,7 +112,7 @@ if final_image is not None:
             else:
                 st.error("🚨 **حالة النبات:** مصاب بمرض، جاري فحص الأعراض المكتشفة...")
                 
-                # 3. تحديد نوع المرض بناءً على الـ argmax المطلق المباشر (اللي كان شغال معاك صح)
+                # 3. تحديد نوع المرض بناءً على الـ argmax المطلق (اللي شغال معاك صح)
                 disease_index = np.argmax(pred_disease)
                 disease_classes = [
                     "البياض الزغبي (Basil Downy Mildew)", 
@@ -159,5 +158,5 @@ if final_image is not None:
                     st.info("ℹ️ لم يتم إدخال تفاصيل علاج هذا المرض في قاعدة البيانات حتى الآن.")
 
         except Exception as e:
-            st.error(f"حدث خطأ أثناء معالجة الصورة أو استخراج التوقعات: {e}")
+            st.error(f"حدث خطأ أثناء معالجة الصورة أو استخراج التوقعات: {e}")أ أثناء معالجة الصورة أو استخراج التوقعات: {e}")
             st.error(f"حدث خطأ أثناء معالجة الصورة أو استخراج التوقعات: {e}")
