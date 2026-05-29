@@ -8,6 +8,15 @@ import gdown
 import zipfile
 import keras
 
+# Patch Keras
+original_dense_init = keras.layers.Dense.__init__
+
+def patched_dense_init(self, *args, **kwargs):
+    kwargs.pop('quantization_config', None)
+    original_dense_init(self, *args, **kwargs)
+
+keras.layers.Dense.__init__ = patched_dense_init
+
 @st.cache_resource
 def load_models():
     file_id = '1dECn0z9QOpfcur4LH8XBTqQYQhCzV-i6'
