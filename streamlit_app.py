@@ -95,13 +95,13 @@ if final_image is not None:
             pred_health = m_health.predict(img_160)
             pred_disease = m_disease.predict(img_224)
 
-            # 1. تحديد نوع النبات (الترتيب الصحيح للموديل: 0 يعني ريحان، 1 يعني نعناع)
-            # بما إن الموديل طلع 0 لصورة النعناع، يبقى الموديل شايف النعناع بـ 0 والريحان بـ 1
+           # 1. تحديد نوع النبات (تم الضبط: 0 يعني نعناع، 1 يعني ريحان)
             plant_classes = ["نعناع", "ريحان"]
             plant_index = np.argmax(pred_plant)
             detected_plant = plant_classes[plant_index]
             
             st.success(f"📌 **نوع النبات المكتشف:** {detected_plant}")
+            
 
             # 2. تحديد الحالة الصحية (بناءً على Sigmoid مخرج واحد)
             health_value = pred_health[0][0]
