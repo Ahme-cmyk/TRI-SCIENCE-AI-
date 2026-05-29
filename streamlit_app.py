@@ -95,7 +95,7 @@ if final_image is not None:
             pred_health = m_health.predict(img_160)
             pred_disease = m_disease.predict(img_224)
 
-            # 1. تحديد نوع النبات المظبوط
+            # 1. تحديد نوع النبات المظبوط (0 نعناع، 1 ريحان)
             plant_classes = ["نعناع", "ريحان"]
             plant_index = np.argmax(pred_plant)
             detected_plant = plant_classes[plant_index]
@@ -112,7 +112,7 @@ if final_image is not None:
             else:
                 st.error("🚨 **حالة النبات:** مصاب بمرض، جاري فحص الأعراض المكتشفة...")
                 
-                # 3. تحديد نوع المرض بناءً على الـ argmax المطلق (اللي شغال معاك صح)
+                # 3. تحديد نوع المرض بناءً على الـ argmax المطلق (شغال مظبوط)
                 disease_index = np.argmax(pred_disease)
                 disease_classes = [
                     "البياض الزغبي (Basil Downy Mildew)", 
@@ -157,5 +157,5 @@ if final_image is not None:
                 else:
                     st.info("ℹ️ لم يتم إدخال تفاصيل علاج هذا المرض في قاعدة البيانات حتى الآن.")
 
-      except Exception as e:
+        except Exception as e:
             st.error(f"حدث خطأ أثناء معالجة الصورة أو استخراج التوقعات: {e}")
