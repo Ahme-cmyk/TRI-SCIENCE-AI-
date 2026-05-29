@@ -95,9 +95,9 @@ if final_image is not None:
             pred_health = m_health.predict(img_160)
             pred_disease = m_disease.predict(img_224)
 
-            # 1. تحديد نوع النبات (0 -> نعناع، 1 -> ريحان)
-            plant_index = np.argmax(pred_plant)
+            # 1. تحديد نوع النبات (تم التعديل: 0 -> نعناع، 1 -> ريحان)
             plant_classes = ["نعناع", "ريحان"]
+            plant_index = np.argmax(pred_plant)
             detected_plant = plant_classes[plant_index]
             
             st.success(f"📌 **نوع النبات المكتشف:** {detected_plant}")
@@ -112,19 +112,24 @@ if final_image is not None:
             else:
                 st.error("🚨 **حالة النبات:** مصاب بمرض، جاري فحص الأعراض المكتشفة...")
                 
-                # 3. تحديد نوع المرض بناءً على الترتيب الأبجدي الدقيق للـ Dataset
-                disease_index = np.argmax(pred_disease)
-                disease_classes = [
-                    "البياض الزغبي (Basil Downy Mildew)", 
-                    "تبقع الأوراق (Basil Leaf Spot)", 
-                    "البياض الدقيقي (Mint Powdery Mildew)", 
-                    "صدأ الأوراق (Mint Rust)"
-                ]
-                detected_disease = disease_classes[disease_index]
+                # 3. الفلترة الذكية بناءً على الترتيب الفعلي لموديلاتك
+                if detected_plant == "نعناع":
+                    # أمراض النعناع في موديلك (البياض الدقيقي وصدأ الأوراق)
+                    if pred_disease[0][2] > pred_disease[0][3]:
+                        detected_disease = "البياض الدقيقي (Mint Powdery Mildew)"
+                    else:
+                        detected_disease = "صدأ الأوراق (Mint Rust)"
+                        
+                elif detected_plant == "ريحان":
+                    # أمراض الريحان في موديلك (البياض الزغبي وتبقع الأوراق)
+                    if pred_disease[0][0] > pred_disease[0][1]:
+                        detected_disease = "البياض الزغبي (Basil Downy Mildew)"
+                    else:
+                        detected_disease = "تبقع الأوراق (Basil Leaf Spot)"
                 
                 st.warning(f"🔍 **التشخيص الدقيق للمرض:** {detected_disease}")
                 
-                # 4. قاموس العلاج الشامل لكل مرض
+                # 4. قاموس العلاج الشامل
                 DISEASES_DATABASE = {
                     "البياض الزغبي (Basil Downy Mildew)": {
                         "fast": "تقليل الرطوبة تماماً حول الريحان، والتخلص فوراً من الأوراق المصابة بشدة وحرقها، وتجنب الري العلوي (رش الأوراق).",
@@ -144,7 +149,7 @@ if final_image is not None:
                     }
                 }
                 
-                # عرض كروت العلاج الشيك للمستخدم
+                # عرض كروت العلاج للمستخدم
                 if detected_disease in DISEASES_DATABASE:
                     st.write("---")
                     col1, col2 = st.columns(2)
