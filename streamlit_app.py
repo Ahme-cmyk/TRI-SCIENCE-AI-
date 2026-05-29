@@ -95,7 +95,8 @@ if final_image is not None:
             pred_health = m_health.predict(img_160)
             pred_disease = m_disease.predict(img_224)
 
-            # 1. تحديد نوع النبات (تم التعديل: 0 -> نعناع، 1 -> ريحان)
+            # 1. تحديد نوع النبات (الترتيب الصحيح للموديل: 0 يعني ريحان، 1 يعني نعناع)
+            # بما إن الموديل طلع 0 لصورة النعناع، يبقى الموديل شايف النعناع بـ 0 والريحان بـ 1
             plant_classes = ["نعناع", "ريحان"]
             plant_index = np.argmax(pred_plant)
             detected_plant = plant_classes[plant_index]
@@ -112,20 +113,15 @@ if final_image is not None:
             else:
                 st.error("🚨 **حالة النبات:** مصاب بمرض، جاري فحص الأعراض المكتشفة...")
                 
-                # 3. الفلترة الذكية بناءً على الترتيب الفعلي لموديلاتك
-                if detected_plant == "نعناع":
-                    # أمراض النعناع في موديلك (البياض الدقيقي وصدأ الأوراق)
-                    if pred_disease[0][2] > pred_disease[0][3]:
-                        detected_disease = "البياض الدقيقي (Mint Powdery Mildew)"
-                    else:
-                        detected_disease = "صدأ الأوراق (Mint Rust)"
-                        
-                elif detected_plant == "ريحان":
-                    # أمراض الريحان في موديلك (البياض الزغبي وتبقع الأوراق)
-                    if pred_disease[0][0] > pred_disease[0][1]:
-                        detected_disease = "البياض الزغبي (Basil Downy Mildew)"
-                    else:
-                        detected_disease = "تبقع الأوراق (Basil Leaf Spot)"
+                # 3. تحديد نوع المرض بناءً على الـ argmax المطلق المباشر (اللي كان شغال معاك صح)
+                disease_index = np.argmax(pred_disease)
+                disease_classes = [
+                    "البياض الزغبي (Basil Downy Mildew)", 
+                    "تبقع الأوراق (Basil Leaf Spot)", 
+                    "البياض الدقيقي (Mint Powdery Mildew)", 
+                    "صدأ الأوراق (Mint Rust)"
+                ]
+                detected_disease = disease_classes[disease_index]
                 
                 st.warning(f"🔍 **التشخيص الدقيق للمرض:** {detected_disease}")
                 
@@ -163,4 +159,5 @@ if final_image is not None:
                     st.info("ℹ️ لم يتم إدخال تفاصيل علاج هذا المرض في قاعدة البيانات حتى الآن.")
 
         except Exception as e:
+            st.error(f"حدث خطأ أثناء معالجة الصورة أو استخراج التوقعات: {e}")
             st.error(f"حدث خطأ أثناء معالجة الصورة أو استخراج التوقعات: {e}")
