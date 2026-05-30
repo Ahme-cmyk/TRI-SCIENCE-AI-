@@ -95,16 +95,25 @@ if final_image is not None:
             pred_health = m_health.predict(img_160)
             pred_disease = m_disease.predict(img_224)
 
-            # 1. تحديد نوع النبات (0 ريحان ، 1 نعناع)
+            # 1. تحديد نوع النبات 
             plant_classes = ["ريحان", "نعناع"]
             plant_index = np.argmax(pred_plant)
             detected_plant = plant_classes[plant_index]
             
             st.success(f"📌 **نوع النبات المكتشف:** {detected_plant}")
 
-            # 2. تحديد الحالة الصحية 
-            health_value = pred_health[0][0]
-            is_healthy = health_value < 0.5 
+            # استخراج القيمة الرقمية لموديل الصحة بدقة
+            health_value = float(pred_health[0][0])
+            
+            # 👇 سطر سحري للاختبار (هيطبع لك الرقم السري اللي طالع من الموديل عشان نفهمه)
+            st.write(f"📊 قراءة موديل الصحة الرقمية الحالية: `{health_value:.4f}`")
+
+            # 2. تحديد الحالة الصحية بناءً على نوع النبات (عشان نضمن الدقة)
+            if detected_plant == "نعناع":
+                is_healthy = health_value < 0.5
+            else:
+                # للريحان: لو لسه بيطلع سليم، جرب تعدل الـ 0.5 دي وتخليها (health_value > 0.5) أو حسب الرقم اللي هيظهرلك فوق
+                is_healthy = health_value < 0.5 
             
             if is_healthy:
                 st.balloons()
@@ -124,7 +133,7 @@ if final_image is not None:
                 
                 st.warning(f"🔍 **التشخيص الدقيق للمرض:** {detected_disease}")
                 
-                # 4. قاموس العلاج الشامل لجميع الأمراض الأربعة كاملة وبدون اختصار
+                # 4. قاموس العلاج الشامل
                 DISEASES_DATABASE = {
                     "البياض الزغبي (Basil Downy Mildew)": {
                         "fast": "تقليل الرطوبة تماماً حول الريحان، والتخلص فوراً من الأوراق المصابة بشدة وحرقها، وتجنب الري العلوي (رش الأوراق).",
