@@ -95,7 +95,7 @@ if final_image is not None:
             pred_health = m_health.predict(img_160)
             pred_disease = m_disease.predict(img_224)
 
-            # 1. تحديد نوع النبات (تم حل المشكلة وعكس الترتيب ليتطابق مع الموديل)
+            # 1. تحديد نوع النبات (0 ريحان ، 1 نعناع)
             plant_classes = ["ريحان", "نعناع"]
             plant_index = np.argmax(pred_plant)
             detected_plant = plant_classes[plant_index]
@@ -124,7 +124,7 @@ if final_image is not None:
                 
                 st.warning(f"🔍 **التشخيص الدقيق للمرض:** {detected_disease}")
                 
-                # 4. قاموس العلاج الشامل
+                # 4. قاموس العلاج الشامل لجميع الأمراض الأربعة كاملة وبدون اختصار
                 DISEASES_DATABASE = {
                     "البياض الزغبي (Basil Downy Mildew)": {
                         "fast": "تقليل الرطوبة تماماً حول الريحان، والتخلص فوراً من الأوراق المصابة بشدة وحرقها، وتجنب الري العلوي (رش الأوراق).",
@@ -149,3 +149,13 @@ if final_image is not None:
                     st.write("---")
                     col1, col2 = st.columns(2)
                     with col1:
+                        st.subheader("⏱️ الإجراء السريع والفوري:")
+                        st.info(DISEASES_DATABASE[detected_disease]["fast"])
+                    with col2:
+                        st.subheader("🧪 العلاج الكيميائي والمبيدات:")
+                        st.warning(DISEASES_DATABASE[detected_disease]["chemical"])
+                else:
+                    st.info("ℹ️ لم يتم إدخال تفاصيل علاج هذا المرض في قاعدة البيانات حتى الآن.")
+
+        except Exception as e:
+            st.error(f"حدث خطأ أثناء معالجة الصورة أو استخراج التوقعات: {e}")
