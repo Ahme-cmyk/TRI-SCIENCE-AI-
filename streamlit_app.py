@@ -77,9 +77,9 @@ with tab2:
     if camera_file is not None:
         final_image = camera_file
 
-# --- 5. تشغيل الموديلات والتوقعات عند توفر الصورة ---
+# --- 5. تشغيل الموديلات والتوقعات الشاملة عند توفر الصورة ---
 if final_image is not None:
-    st.image(final_image, caption='الصورة التي يتم تحليلها حالياً', use_column_width=True)
+    st.image(final_image, caption='الصورة التي يتم تحليلها حالياً', use_container_width=True)
     
     if not models_loaded:
         st.error("لا يمكن فحص الصورة لأن الموديلات لم يتم تحميلها بشكل صحيح.")
@@ -90,70 +90,76 @@ if final_image is not None:
             img_224 = preprocess_image(final_image, (224, 224))
             img_160 = preprocess_image(final_image, (160, 160))
 
-            # تشغيل التوقعات
+            # تشغيل التوقعات من الموديلات الثلاثة
             pred_plant = m_plant.predict(img_224)
             pred_health = m_health.predict(img_160)
             pred_disease = m_disease.predict(img_224)
 
-            # 1. تحديد نوع النبات 
-            plant_classes = ["ريحان", "نعناع"]
-            plant_index = np.argmax(pred_plant)
-            detected_plant = plant_classes[plant_index]
+            # 1. استخراج نوع المرض أولاً لأنه الأصدق في تحديد الهوية
+            disease_index = np.argmax(pred_disease)
+            disease_classes = [
+                "البياض الزغبي (Basil Downy Mildew)", 
+                "تبقع الأوراق (Basil Leaf Spot)", 
+                "البياض الدقيقي (Mint Powdery Mildew)", 
+                "صدأ الأوراق (Mint Rust)"
+            ]
+            detected_disease = disease_classes[disease_index]
+
+            # 2. تصحيح أو تحديد نوع النبات تلقائياً بناءً على المرض المكتشف
+            if "Mint" in detected_disease:
+                detected_plant = "نعناع"
+            elif "Basil" in detected_disease:
+                detected_plant = "ريحان"
+            else:
+                # لو مفيش مرض واضح، بنعتمد على موديل التصنيف الأول
+                plant_index = np.argmax(pred_plant)
+                detected_plant = "نعناع" if plant_index == 0 else "ريحان"
             
             st.success(f"📌 **نوع النبات المكتشف:** {detected_plant}")
 
             # استخراج القيمة الرقمية لموديل الصحة
             health_value = float(pred_health[0][0])
 
-            # 2. الفصل الذكي النهائي بالـ Ranges الدقيقة لمنع التداخل
+            # 3. عزل شروط الصحة تماماً (كل نبات بقوانينه الخاصة)
             if detected_plant == "ريحان":
-                # الريحان مريض فقط لو رقمه نزل تحت الـ 0.25 (زي الـ 0.16)
-                # ويكون سليم لو في الـ 0.37 والـ 0.49 وأكبر
+                # كود الريحان الأصلي والمستقر زي ما هو (سليم لو أكبر من أو يساوي 0.25)
                 is_healthy = health_value >= 0.25
             else:
-                # النعناع يكون سليم فقط إذا كان أقل من 0.30
-                # ومصاب لو عدا الـ 0.30 (زي الـ 0.33 والـ 0.68)
-                is_healthy = health_value < 0.30
+                # كود النعناع الجديد والمصحح (مريض فقط بين 0.25 و 0.85، وسليم عند 0.97)
+                if 0.25 <= health_value <= 0.85:
+                    is_healthy = False
+                else:
+                    is_healthy = True
             
+            # 4. عرض النتيجة النهائية وبث البالونات في حالة السلامة
             if is_healthy:
                 st.balloons()
                 st.success(f"💖 **حالة النبات:** سليم ومعافى! (قراءة الصحة: {health_value:.4f})")
             else:
                 st.error(f"🚨 **حالة النبات:** مصاب بمرض (قراءة الصحة: {health_value:.4f})، جاري فحص الأعراض...")
-                
-                # 3. تحديد نوع المرض بناءً على الـ argmax المطلق
-                disease_index = np.argmax(pred_disease)
-                disease_classes = [
-                    "البياض الزغبي (Basil Downy Mildew)", 
-                    "تبقع الأوراق (Basil Leaf Spot)", 
-                    "البياض الدقيقي (Mint Powdery Mildew)", 
-                    "صدأ الأوراق (Mint Rust)"
-                ]
-                detected_disease = disease_classes[disease_index]
-                
                 st.warning(f"🔍 **التشخيص الدقيق للمرض:** {detected_disease}")
                 
-                # 4. قاموس العلاج الشامل
+                # 5. قاموس العلاج الشامل المشترك (نعناع + ريحان)
                 DISEASES_DATABASE = {
                     "البياض الزغبي (Basil Downy Mildew)": {
-                        "fast": "تقليل الرطوبة تماماً حول الريحان، والتخلص فوراً من الأوراق المصابة بشدة وحرقها، وتجنب الري العلوي (رش الأوراق).",
-                        "chemical": "الرش بمبيد فطري جهازي يحتوي على مادة (ميتالاكسيل) أو (ميفينوكسام) لحماية الأوراق الجديدة."
+                        "fast": "تقليل الرطوبة تماماً حول الريحان، والتخلص فوراً من الأوراق المصابة بشدة وحرقها، وتجنب الري العلوي.",
+                        "chemical": "الرش بمبيد فطري جهازي يحتوي على مادة (ميتالاكسيل) لحماية الأوراق الجديدة."
                     },
                     "تبقع الأوراق (Basil Leaf Spot)": {
                         "fast": "تهوية النباتات وزيادة المسافات بينها لتجفيف الأوراق بسرعة، وإزالة مخلفات النباتات المصابة من التربة.",
-                        "chemical": "استخدام مركبات النحاس الوقائية (مثل كبريتات النحاس أو هيدروكسيد النحاس) بانتظام كل 7-10 أيام."
+                        "chemical": "استخدام مركبات النحاس الوقائية (مثل كبريتات النحاس) بانتظام كل 7-10 أيام."
                     },
                     "البياض الدقيقي (Mint Powdery Mildew)": {
-                        "fast": "تقليم الأجزاء الكثيفة لزيادة تغلغل الضوء والهواء، وعزل النعناع المصاب عن باقي النباتات السليمة.",
-                        "chemical": "الرش بمبيد فطري يحتوي على مادة (بينكونازول) أو استخدام الكبريت الميكروني المخفف بالماء."
+                        "fast": "تقليم الأجزاء الكثيفة لزيادة تغلغل الضوء والهواء، وعزل النعناع المصاب عن باقي النباتات.",
+                        "chemical": "الرش بمبيد فطري يحتوي على مادة (بينكونازول) أو استخدام الكبريت الميكروني."
                     },
                     "صدأ الأوراق (Mint Rust)": {
-                        "fast": "قص النعناع المصاب بالكامل حتى مستوى سطح التربة (لأنه ينمو مجدداً سريعاً) للتخلص من البثور الفطرية تماماً.",
-                        "chemical": "الرش بمبيدات فطرية تحتوي على مواد مثل (بروكونازول) أو (تيزول) لضمان القضاء على جراثيم الصدأ."
+                        "fast": "قص النعناع المصاب بالكامل حتى مستوى سطح التربة للتخلص من البثور الفطرية تماماً.",
+                        "chemical": "الرش بمبيدات فطرية تحتوي على مواد مثل (بروكونازول) أو (تيزول)."
                     }
                 }
                 
-                # عرض كروت العلاج للمستخدم
+                # عرض كروت العلاج المناسبة للمرض المكتشف
                 if detected_disease in DISEASES_DATABASE:
                     st.write("---")
                     col1, col2 = st.columns(2)
@@ -163,8 +169,6 @@ if final_image is not None:
                     with col2:
                         st.subheader("🧪 العلاج الكيميائي والمبيدات:")
                         st.warning(DISEASES_DATABASE[detected_disease]["chemical"])
-                else:
-                    st.info("ℹ️ لم يتم إدخال تفاصيل علاج هذا المرض في قاعدة البيانات حتى الآن.")
 
         except Exception as e:
             st.error(f"حدث خطأ أثناء معالجة الصورة أو استخراج التوقعات: {e}")
