@@ -78,7 +78,8 @@ with tab2:
         final_image = camera_file
 
 
-           # --- 5. تشغيل الموديلات والتوقعات الشاملة والمعايرة الرقمية النهائية ---
+         
+         # --- 5. تشغيل الموديلات والتوقعات الشاملة والمعايرة الرقمية النهائية ---
 if final_image is not None:
     st.image(final_image, caption='الصورة التي يتم تحليلها حالياً', use_container_width=True)
     
@@ -112,7 +113,6 @@ if final_image is not None:
             elif "Basil" in detected_disease:
                 detected_plant = "ريحان"
             else:
-                # خط دفاع احتياطي لو لم يلقط مرض واضح
                 plant_index = np.argmax(pred_plant)
                 detected_plant = "نعناع" if plant_index == 0 else "ريحان"
             
@@ -121,12 +121,16 @@ if final_image is not None:
             # استخراج القيمة الرقمية لموديل الصحة
             health_value = float(pred_health[0][0])
 
-            # 3. المعايرة الرقمية الدقيقة (Mathematical Thresholds) بناءً على بياناتك الفعلية
+            # 3. نظام الفحص المتقاطع الذكي (حماية مطلقة للريحان والنعناع)
             if detected_plant == "ريحان":
-                # الريحان سليم في الأرقام المنخفضة (0.37 و 0.49) ومصاب في العالية (0.65 و 0.71)
-                is_healthy = health_value < 0.55
+                # رادار الريحان: لو موديل الأمراض لقط مرض ريحان، يبقى مصاب فوراً مهما كان الرقم
+                if "Basil" in detected_disease:
+                    is_healthy = False
+                else:
+                    # لو الموديل مش لقط مرض، بنشيك على النطاق السليم للريحان اللي إنت حددته
+                    is_healthy = 0.15 <= health_value <= 0.52
             else:
-                # النعناع سليم فقط في الأرقام العالية جداً (0.88 و 0.90 و 0.91 و 0.97) ومصاب تحت الـ 0.80
+                # رادار النعناع: مستقر وثابت تماماً بناءً على تجربتك الناجحة الأخيرة
                 is_healthy = health_value >= 0.80
             
             # 4. عرض النتيجة النهائية وبث البالونات في حالة السلامة
