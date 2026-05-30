@@ -80,8 +80,7 @@ with tab2:
 
          
       
-    
-# --- 5. تشغيل الموديلات والتوقعات الشاملة والمعايرة الرقمية النهائية ---
+    # --- 5. تشغيل الموديلات والتوقعات الشاملة والمعايرة الرقمية النهائية ---
 if final_image is not None:
     st.image(final_image, caption='الصورة التي يتم تحليلها حالياً', use_container_width=True)
     
@@ -99,7 +98,7 @@ if final_image is not None:
             pred_health = m_health.predict(img_160)
             pred_disease = m_disease.predict(img_224)
 
-            # 1. استخراج نوع المرض أولاً لأنه الأصدق في تحديد الهوية
+            # 1. استخراج نوع المرض
             disease_index = np.argmax(pred_disease)
             disease_classes = [
                 "البياض الزغبي (Basil Downy Mildew)", 
@@ -109,7 +108,7 @@ if final_image is not None:
             ]
             detected_disease = disease_classes[disease_index]
 
-            # 2. تصحيح أو تحديد نوع النبات تلقائياً بناءً على المرض المكتشف لمنع التداخل
+            # 2. تحديد نوع النبات تلقائياً
             if "Mint" in detected_disease:
                 detected_plant = "نعناع"
             elif "Basil" in detected_disease:
@@ -123,17 +122,13 @@ if final_image is not None:
             # استخراج القيمة الرقمية لموديل الصحة
             health_value = float(pred_health[0][0])
 
-            # 3. نظام الفحص المتقاطع الذكي (المعايرة الرقمية الجديدة المظبوطة لمنع خطأ الريحان)
+            # 3. نظام الفحص المتقاطع (بناءً على قراءات أحمد حسني اليدوية الأصلية)
             if detected_plant == "ريحان":
-                # رادار الريحان: لو موديل الأمراض لقط مرض ريحان، يبقى مصاب فوراً
-                if "Basil" in detected_disease:
-                    is_healthy = False
-                else:
-                    # التعديل الجديد هنا 👇: رفعنا العتبة لـ 0.82 عشان تستوعب الريحان السليم
-                    is_healthy = health_value <= 0.82
+                # رجعنا لأصلك القديم المظبوط: السليم تحت الـ 0.45
+                is_healthy = health_value <= 0.45
             else:
-                # رادار النعناع الثابت والمستقر
-                is_healthy = health_value >= 0.72
+                # رجعنا لأصلك القديم المظبوط: النعناع السليم فوق الـ 0.75
+                is_healthy = health_value >= 0.75
             
             # 4. عرض النتيجة النهائية وبث البالونات في حالة السلامة
             if is_healthy:
@@ -176,3 +171,4 @@ if final_image is not None:
 
         except Exception as e:
             st.error(f"حدث خطأ أثناء معالجة الصورة أو استخراج التوقعات: {e}")
+
